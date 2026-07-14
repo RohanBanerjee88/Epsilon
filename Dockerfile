@@ -30,5 +30,5 @@ RUN mkdir -p /data
 
 EXPOSE 8080
 
-# Honor $PORT if the platform injects one; default to 8080.
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# The Python launcher reads Maritime's injected PORT without shell expansion.
+CMD ["python", "-m", "app.start"]
