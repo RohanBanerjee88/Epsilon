@@ -61,11 +61,11 @@ export function ResearchWorkspace() {
   }, [loading]);
 
   useEffect(() => {
-    if (!brief && !error) return;
+    if (!loading && !brief && !error) return;
     window.requestAnimationFrame(() => {
       outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [brief, error]);
+  }, [brief, error, loading]);
 
   async function preparePhoneCard(completedBrief: ResearchBriefType) {
     setShareLoading(true);
@@ -245,7 +245,7 @@ export function ResearchWorkspace() {
             )}
 
             {loading ? (
-              <ResearchLoading phase={PHASES[phase]} />
+              <ResearchLoading phase={PHASES[phase]} phaseIndex={phase} />
             ) : brief ? (
               <>
                 <div className="mb-6 flex justify-end">
