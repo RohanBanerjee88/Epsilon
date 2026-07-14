@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Research Navigator</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1e222b;
+    --border: #2a2f3a;
+    --text: #e7e9ee;
+    --muted: #9aa1ad;
+    --accent: #7aa2f7;
+    --accent-soft: #24304d;
+    --good: #7bd88f;
+    --warn: #f7b955;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  header p { color: var(--muted); margin: 0 0 28px; font-size: 15px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  textarea, input {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px; padding: 12px 14px; font-size: 15px;
+    font-family: inherit; resize: vertical;
+  }
+  textarea:focus, input:focus { outline: none; border-color: var(--accent); }
+  .row { margin-bottom: 14px; }
+  button {
+    background: var(--accent); color: #0b1020; border: 0; border-radius: 10px;
+    padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: 0.55; cursor: default; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .status { color: var(--muted); font-size: 14px; margin: 18px 2px; min-height: 20px; }
+  .section-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--accent); margin: 0 0 10px; font-weight: 700;
+  }
+  .refined { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  ul.clean { margin: 0; padding-left: 18px; }
+  ul.clean li { margin: 5px 0; }
+  .pill-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill {
+    background: var(--accent-soft); border: 1px solid var(--border); color: var(--text);
+    border-radius: 999px; padding: 5px 12px; font-size: 13px;
+  }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .cols { grid-template-columns: 1fr; } }
+  .source { border-top: 1px solid var(--border); padding: 12px 0; }
+  .source:first-of-type { border-top: 0; padding-top: 0; }
+  .source a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 15px; }
+  .source a:hover { text-decoration: underline; }
+  .source .meta { font-size: 12px; color: var(--muted); margin: 2px 0 4px; }
+  .source .why { font-size: 14px; color: var(--text); }
+  .rec { background: linear-gradient(180deg, var(--accent-soft), var(--panel)); }
+  .rec h3 { margin: 0 0 8px; font-size: 19px; letter-spacing: -0.01em; }
+  .rec .sub { font-size: 13px; color: var(--muted); margin: 12px 0 2px; font-weight: 600; }
+  .steps li { margin: 8px 0; }
+  .footer { margin-top: 30px; font-size: 12px; color: var(--muted); text-align: center; }
+  .hidden { display: none; }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite;
+    vertical-align: -2px; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Research Navigator</h1>
+    <p>Describe a fuzzy research interest. Get back a sharper question, real
+       sources, what's crowded vs. open, and one direction worth pursuing.</p>
+  </header>
+
+  <div class="card">
+    <div class="row">
+      <label for="topic">Research interest</label>
+      <textarea id="topic" rows="2" placeholder="e.g. lightweight retrieval methods for on-device scientific search"></textarea>
+    </div>
+    <div class="row">
+      <label for="context">Context <span style="opacity:.7">(optional — field, background, constraints, goal)</span></label>
+      <textarea id="context" rows="2" placeholder="e.g. undergrad, limited compute, want a scoped semester project"></textarea>
+    </div>
+    <button id="go">Explore</button>
+    <div class="hint">Backed by a persistent agent — it remembers your prior topics on this device.</div>
+  </div>
+
+  <div class="status" id="status"></div>
+  <div id="results"></div>
+
+  <div class="footer">Research Navigator · agent hosted on Maritime</div>
+</div>
+
+<script>
+  // Stable per-device id so the agent's memory persists across sessions.
+  const userId = (() => {
+    let id = localStorage.getItem("rn_user_id");
+    if (!id) { id = "u_" + Math.random().toString(36).slice(2, 12); localStorage.setItem("rn_user_id", id); }
+    return id;
+  })();
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => (s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function list(items) {
+    if (!items || !items.length) return '<span style="color:var(--muted)">—</span>';
+    return '<ul class="clean">' + items.map(i => `<li>${esc(i)}</li>`).join("") + "</ul>";
+  }
+  function pills(items) {
+    if (!items || !items.length) return '<span style="color:var(--muted)">—</span>';
+    return '<div class="pill-wrap">' + items.map(i => `<span class="pill">${esc(i)}</span>`).join("") + "</div>";
+  }
+  function sourceCard(s) {
+    const meta = [s.source_type, s.year, s.citation_count != null ? s.citation_count + " citations" : null]
+      .filter(Boolean).join(" · ");
+    const link = s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`
+                       : `<span style="font-weight:600">${esc(s.title)}</span>`;
+    return `<div class="source">${link}<div class="meta">${esc(meta)}</div>
+            <div class="why">${esc(s.why_it_matters)}</div></div>`;
+  }
+
+  function render(d) {
+    const rd = d.recommended_direction || {};
+    const priorNote = (d.prior_interests && d.prior_interests.length)
+      ? `<div class="hint">Considered your ${d.prior_interests.length} prior topic(s) as context.</div>` : "";
+    $("results").innerHTML = `
+      <div class="card">
+        <div class="section-title">Refined research question</div>
+        <p class="refined">${esc(d.refined_question)}</p>
+      </div>
+      <div class="card">
+        <div class="section-title">Search directions</div>
+        ${pills(d.search_directions)}
+      </div>
+      <div class="card">
+        <div class="section-title">Relevant papers &amp; sources</div>
+        ${(d.relevant_sources || []).map(sourceCard).join("") || '<span style="color:var(--muted)">No sources found.</span>'}
+      </div>
+      <div class="card">
+        <div class="section-title">Key themes</div>
+        ${list(d.key_themes)}
+      </div>
+      <div class="cols">
+        <div class="card">
+          <div class="section-title">What looks saturated</div>
+          ${list(d.saturated_areas)}
+        </div>
+        <div class="card">
+          <div class="section-title">What looks underexplored</div>
+          ${list(d.underexplored_areas)}
+        </div>
+      </div>
+      <div class="card rec">
+        <div class="section-title">Recommended direction</div>
+        <h3>${esc(rd.title)}</h3>
+        <div>${esc(rd.rationale)}</div>
+        <div class="sub">Why it's novel</div><div>${esc(rd.novelty_reason)}</div>
+        <div class="sub">Why it's feasible</div><div>${esc(rd.feasibility_reason)}</div>
+      </div>
+      <div class="card">
+        <div class="section-title">Next 3 concrete steps</div>
+        <ul class="clean steps">${(d.next_steps || []).map(s => `<li>${esc(s)}</li>`).join("")}</ul>
+      </div>
+      <div class="hint">Synthesized from ${d.sources_considered} retrieved sources · model ${esc(d.model)}</div>
+      ${priorNote}
+    `;
+  }
+
+  async function run() {
+    const topic = $("topic").value.trim();
+    if (topic.length < 3) { $("status").textContent = "Enter a research interest first."; return; }
+    $("go").disabled = true;
+    $("results").innerHTML = "";
+    $("status").innerHTML = '<span class="spinner"></span>Planning queries, searching papers, and synthesizing…';
+    try {
+      const res = await fetch("/research/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, context: $("context").value.trim(), userId })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || ("HTTP " + res.status));
+      }
+      const data = await res.json();
+      $("status").textContent = "";
+      render(data);
+    } catch (e) {
+      $("status").textContent = "Something went wrong: " + e.message;
+    } finally {
+      $("go").disabled = false;
+    }
+  }
+
+  $("go").addEventListener("click", run);
+  $("topic").addEventListener("keydown", (e) => { if (e.metaKey && e.key === "Enter") run(); });
+</script>
+</body>
+</html>
