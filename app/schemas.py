@@ -15,9 +15,16 @@ from pydantic import BaseModel, Field
 
 
 class AnalyzeRequest(BaseModel):
-    topic: str = Field(..., min_length=3, description="Natural-language research interest.")
-    context: str = Field("", description="Optional background, field, constraints, or goal.")
-    user_id: str = Field("anonymous", alias="userId", description="Stable per-user id for memory.")
+    topic: str = Field(
+        ..., min_length=3, max_length=2000, description="Natural-language research interest."
+    )
+    context: str = Field(
+        "", max_length=4000, description="Optional background, field, constraints, or goal."
+    )
+    user_id: str = Field(
+        "anonymous", min_length=1, max_length=128, alias="userId",
+        description="Stable per-user id for memory.",
+    )
 
     model_config = {"populate_by_name": True}
 
@@ -43,15 +50,15 @@ class RecommendedDirection(BaseModel):
 
 class ResearchBrief(BaseModel):
     refined_question: str
-    search_directions: List[str] = []
-    relevant_sources: List[Source] = []
-    key_themes: List[str] = []
-    saturated_areas: List[str] = []
-    underexplored_areas: List[str] = []
+    search_directions: List[str] = Field(default_factory=list)
+    relevant_sources: List[Source] = Field(default_factory=list)
+    key_themes: List[str] = Field(default_factory=list)
+    saturated_areas: List[str] = Field(default_factory=list)
+    underexplored_areas: List[str] = Field(default_factory=list)
     recommended_direction: RecommendedDirection
-    next_steps: List[str] = []
+    next_steps: List[str] = Field(default_factory=list)
 
     # Metadata about how the brief was produced (nice for the demo / debugging).
     sources_considered: int = 0
-    prior_interests: List[str] = []
+    prior_interests: List[str] = Field(default_factory=list)
     model: str = ""

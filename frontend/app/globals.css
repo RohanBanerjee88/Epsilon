@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fffdfb;
+  --foreground: #211d1d;
+  --card: #ffffff;
+  --card-foreground: #211d1d;
+  --popover: #ffffff;
+  --popover-foreground: #211d1d;
+  --primary: #b21825;
+  --primary-foreground: #ffffff;
+  --secondary: #f3eeee;
+  --secondary-foreground: #211d1d;
+  --muted: #eee9e8;
+  --muted-foreground: #716969;
+  --accent: #f6e9e9;
+  --accent-foreground: #8e1621;
+  --destructive: #a51521;
+  --border: #ded7d5;
+  --input: #d8cfcd;
+  --ring: #b21825;
+  --radius: 0.375rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 20;
+  transform: translateY(-200%);
+  border-radius: 4px;
+  background: var(--primary);
+  padding: 0.6rem 0.8rem;
+  color: white;
+  font-size: 0.875rem;
+  transition: transform 160ms ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.empty-sheet {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3.45rem,
+    rgba(178, 24, 37, 0.055) 3.5rem
+  );
+}
+
+.research-stamp {
+  box-shadow: 4px 4px 0 rgba(178, 24, 37, 0.12);
+}
+
+.animate-in {
+  animation: enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

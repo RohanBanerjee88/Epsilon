@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import json
 import os
+import pathlib
 import threading
 from typing import Dict, List
 
-_STORE_PATH = os.environ.get("MEMORY_PATH", "/data/memory.json")
+_DEFAULT_STORE_PATH = pathlib.Path(__file__).resolve().parents[1] / ".data" / "memory.json"
+_STORE_PATH = os.environ.get("MEMORY_PATH", str(_DEFAULT_STORE_PATH))
 _LOCK = threading.Lock()
 
 
@@ -22,7 +24,7 @@ def _load() -> Dict[str, List[str]]:
     try:
         with open(_STORE_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+    except (FileNotFoundError, json.JSONDecodeError, PermissionError):
         return {}
 
 

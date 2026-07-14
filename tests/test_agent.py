@@ -90,3 +90,15 @@ async def test_memory_persists_between_runs(stub_boundaries):
     await agent.run_analysis(AnalyzeRequest(topic="first topic here", userId="mem-user"))
     second = await agent.run_analysis(AnalyzeRequest(topic="second topic here", userId="mem-user"))
     assert any("sub-100M" in p for p in second.prior_interests)
+
+
+@pytest.mark.asyncio
+async def test_memory_write_failure_does_not_discard_brief(stub_boundaries, monkeypatch):
+    def fail_to_save(_user_id, _interest):
+        raise OSError("read-only filesystem")
+
+    monkeypatch.setattr(agent.memory, "add_interest", fail_to_save)
+    brief = await agent.run_analysis(
+        AnalyzeRequest(topic="fault tolerant research memory", userId="mem-user")
+    )
+    assert brief.recommended_direction.title == "Distilled on-device scientific retriever"

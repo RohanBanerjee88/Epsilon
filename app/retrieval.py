@@ -66,7 +66,7 @@ async def _search_openalex(client: httpx.AsyncClient, query: str, limit: int) ->
 
 
 async def _search_arxiv(client: httpx.AsyncClient, query: str, limit: int) -> List[dict]:
-    url = "http://export.arxiv.org/api/query"
+    url = "https://export.arxiv.org/api/query"
     params = {
         "search_query": f"all:{query}",
         "start": 0,

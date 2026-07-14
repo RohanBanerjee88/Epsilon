@@ -16,14 +16,20 @@ wrote" step that used to fail on stray formatting.
 from __future__ import annotations
 
 import json
+import inspect
+import logging
 import os
 import re
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Dict, List
 
 from anthropic import AsyncAnthropic
+from anthropic.resources.messages import AsyncMessages
 
 from . import memory, prompts, retrieval
 from .schemas import AnalyzeRequest, ResearchBrief
+
+logger = logging.getLogger(__name__)
 
 # Latest Sonnet, high effort by default (both overridable via env).
 MODEL = os.environ.get("RESEARCH_MODEL", "claude-sonnet-5")
@@ -36,8 +42,34 @@ def _get_client() -> AsyncAnthropic:
     global _client
     if _client is None:
         # Reads ANTHROPIC_API_KEY from the environment.
-        _client = AsyncAnthropic()
+        _client = AsyncAnthropic(timeout=180.0, max_retries=2)
     return _client
+
+
+def runtime_diagnostics() -> Dict[str, Any]:
+    """Report whether the installed SDK supports the request shape we use."""
+    try:
+        sdk_version = version("anthropic")
+    except PackageNotFoundError:
+        return {
+            "sdk_version": None,
+            "sdk_compatible": False,
+            "issue": "The anthropic package is not installed.",
+        }
+
+    parameters = inspect.signature(AsyncMessages.create).parameters
+    missing = sorted({"output_config", "thinking"} - set(parameters))
+    issue = None
+    if missing:
+        issue = (
+            f"Anthropic SDK {sdk_version} is too old for structured outputs "
+            f"(missing: {', '.join(missing)}). Install requirements.txt."
+        )
+    return {
+        "sdk_version": sdk_version,
+        "sdk_compatible": not missing,
+        "issue": issue,
+    }
 
 
 # ---- Structured-output schemas ---------------------------------------------
@@ -239,6 +271,10 @@ async def run_analysis(req: AnalyzeRequest) -> ResearchBrief:
     brief_data["model"] = MODEL
 
     # 4) Remember this topic for next time.
-    memory.add_interest(req.user_id, refined_question)
+    try:
+        memory.add_interest(req.user_id, refined_question)
+    except OSError:
+        # A persistence problem should not discard an otherwise valid brief.
+        logger.exception("Could not persist research memory to %s", memory._STORE_PATH)
 
     return ResearchBrief.model_validate(brief_data)
