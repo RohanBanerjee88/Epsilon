@@ -19,9 +19,9 @@ from typing import Dict, List
 import httpx
 
 # Keep the platform polite: OpenAlex asks for a contact in the query string.
-OPENALEX_MAILTO = "research-navigator@maritime.app"
+OPENALEX_MAILTO = "epsilon@maritime.app"
 TIMEOUT = httpx.Timeout(12.0, connect=6.0)
-HEADERS = {"User-Agent": f"ResearchNavigator/1.0 (mailto:{OPENALEX_MAILTO})"}
+HEADERS = {"User-Agent": f"Epsilon/2.1 (mailto:{OPENALEX_MAILTO})"}
 
 
 def _reconstruct_abstract(inverted: Dict[str, List[int]] | None) -> str:

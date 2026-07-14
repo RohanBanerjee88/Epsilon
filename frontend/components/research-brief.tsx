@@ -1,5 +1,6 @@
 import { ArrowUpRight, BookOpenText, CircleCheck, CircleMinus, Lightbulb } from "lucide-react";
 
+import { BriefQr } from "@/components/brief-qr";
 import type { ResearchBrief as ResearchBriefType } from "@/lib/types";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -20,25 +21,37 @@ function BulletList({ items, tone = "default" }: { items: string[]; tone?: "defa
   );
 }
 
-export function ResearchBrief({ brief }: { brief: ResearchBriefType }) {
+type ResearchBriefProps = {
+  brief: ResearchBriefType;
+  shareUrl: string | null;
+  shareLoading: boolean;
+  shareError: string | null;
+};
+
+export function ResearchBrief({ brief, shareUrl, shareLoading, shareError }: ResearchBriefProps) {
   return (
     <article className="animate-in">
-      <header className="border-b border-border pb-10">
-        <div className="mb-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
-          <span className="font-mono tabular-nums">{String(brief.sources_considered).padStart(2, "0")} sources reviewed</span>
-          <span aria-hidden="true">/</span>
-          <span>{brief.model}</span>
-          {brief.prior_interests.length > 0 && (
-            <>
+      <header className="border-b border-border pb-9">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_10rem] lg:items-start">
+          <div>
+            <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
+              <span className="font-mono tabular-nums">{String(brief.sources_considered).padStart(2, "0")} sources reviewed</span>
               <span aria-hidden="true">/</span>
-              <span>{brief.prior_interests.length} prior topic{brief.prior_interests.length === 1 ? "" : "s"} considered</span>
-            </>
-          )}
+              <span>{brief.model}</span>
+              {brief.prior_interests.length > 0 && (
+                <>
+                  <span aria-hidden="true">/</span>
+                  <span>{brief.prior_interests.length} prior topic{brief.prior_interests.length === 1 ? "" : "s"} considered</span>
+                </>
+              )}
+            </div>
+            <SectionLabel>Refined research question</SectionLabel>
+            <h1 className="max-w-3xl text-pretty text-3xl font-semibold leading-[1.08] text-foreground sm:text-4xl">
+              {brief.refined_question}
+            </h1>
+          </div>
+          <BriefQr shareUrl={shareUrl} isPreparing={shareLoading} error={shareError} />
         </div>
-        <SectionLabel>Refined research question</SectionLabel>
-        <h1 className="max-w-4xl text-pretty text-4xl font-semibold leading-[1.02] text-foreground sm:text-5xl xl:text-6xl">
-          {brief.refined_question}
-        </h1>
       </header>
 
       <section className="border-b border-border py-10">

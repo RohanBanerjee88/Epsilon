@@ -26,12 +26,12 @@ export type ResearchBrief = {
   model: string;
 };
 
-export type HealthResponse = {
-  status: string;
-  ready_for_analysis: boolean;
-  has_api_key: boolean;
-  model: string;
-  sdk_version?: string | null;
-  sdk_compatible?: boolean;
-  issue?: string | null;
+export type BriefCard = {
+  id: string;
+  created_at: string;
+  refined_question: string;
+  recommended_direction: ResearchBrief["recommended_direction"];
+  next_steps: string[];
+  underexplored_areas: string[];
+  sources_considered: number;
 };

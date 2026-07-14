@@ -6,6 +6,7 @@ The response schema mirrors the contract in CLAUDE.md exactly so the frontend
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -62,3 +63,19 @@ class ResearchBrief(BaseModel):
     sources_considered: int = 0
     prior_interests: List[str] = Field(default_factory=list)
     model: str = ""
+
+
+# ---- Shareable quick-note card --------------------------------------------
+
+
+class BriefCardCreate(BaseModel):
+    refined_question: str = Field(..., min_length=3, max_length=2000)
+    recommended_direction: RecommendedDirection
+    next_steps: List[str] = Field(..., min_length=1, max_length=5)
+    underexplored_areas: List[str] = Field(default_factory=list, max_length=6)
+    sources_considered: int = Field(0, ge=0)
+
+
+class BriefCard(BriefCardCreate):
+    id: str
+    created_at: datetime

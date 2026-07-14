@@ -1,4 +1,4 @@
-"""The Research Navigator agent loop.
+"""The Epsilon research-direction agent loop.
 
 This is the agentic core, not a single completion:
 

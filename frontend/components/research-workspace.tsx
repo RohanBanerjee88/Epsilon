@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, ArrowRight, BookOpen, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, ArrowRight, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 
+import { EpsilonMark } from "@/components/epsilon-mark";
 import { ResearchBrief } from "@/components/research-brief";
 import { ResearchLoading } from "@/components/research-loading";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { HealthResponse, ResearchBrief as ResearchBriefType } from "@/lib/types";
+import type { BriefCard, ResearchBrief as ResearchBriefType } from "@/lib/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === "development" ? "http://localhost:8080" : "");
 const EXAMPLES = [
   "Small language models for clinical text",
   "Robust tool-using agents without a saturated angle",
@@ -24,10 +25,10 @@ const PHASES = [
 ];
 
 function getUserId() {
-  const key = "research-navigator-user-id";
-  const existing = window.localStorage.getItem(key);
+  const key = "epsilon-user-id";
+  const existing = window.localStorage.getItem(key) ?? window.localStorage.getItem("research-navigator-user-id");
   if (existing) return existing;
-  const created = `rn_${crypto.randomUUID()}`;
+  const created = `eps_${crypto.randomUUID()}`;
   window.localStorage.setItem(key, created);
   return created;
 }
@@ -45,18 +46,13 @@ export function ResearchWorkspace() {
   const [topic, setTopic] = useState("");
   const [context, setContext] = useState("");
   const [brief, setBrief] = useState<ResearchBriefType | null>(null);
-  const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
   const outputRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/health`)
-      .then(async (response) => (response.ok ? (response.json() as Promise<HealthResponse>) : null))
-      .then(setHealth)
-      .catch(() => setHealth(null));
-  }, []);
 
   useEffect(() => {
     if (!loading) return;
@@ -71,6 +67,37 @@ export function ResearchWorkspace() {
     });
   }, [brief, error]);
 
+  async function preparePhoneCard(completedBrief: ResearchBriefType) {
+    setShareLoading(true);
+    setShareError(null);
+    setShareUrl(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/brief-cards`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refined_question: completedBrief.refined_question,
+          recommended_direction: completedBrief.recommended_direction,
+          next_steps: completedBrief.next_steps,
+          underexplored_areas: completedBrief.underexplored_areas,
+          sources_considered: completedBrief.sources_considered,
+        }),
+      });
+      const payload: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(readError(payload, "The phone card could not be created."));
+
+      const card = payload as BriefCard;
+      const configuredOrigin = process.env.NEXT_PUBLIC_SHARE_BASE_URL?.replace(/\/$/, "");
+      const origin = configuredOrigin || window.location.origin;
+      setShareUrl(`${origin}/card/?id=${encodeURIComponent(card.id)}`);
+    } catch (caught) {
+      setShareError(caught instanceof Error ? caught.message : "The phone card could not be created.");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
   async function analyze() {
     const cleanTopic = topic.trim();
     if (cleanTopic.length < 3) {
@@ -82,6 +109,8 @@ export function ResearchWorkspace() {
     setPhase(0);
     setError(null);
     setBrief(null);
+    setShareUrl(null);
+    setShareError(null);
 
     try {
       const response = await fetch(`${API_BASE_URL}/research/analyze`, {
@@ -91,7 +120,9 @@ export function ResearchWorkspace() {
       });
       const payload: unknown = await response.json().catch(() => null);
       if (!response.ok) throw new Error(readError(payload, `Request failed with status ${response.status}.`));
-      setBrief(payload as ResearchBriefType);
+      const completedBrief = payload as ResearchBriefType;
+      setBrief(completedBrief);
+      void preparePhoneCard(completedBrief);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The analysis could not be completed.");
     } finally {
@@ -102,6 +133,8 @@ export function ResearchWorkspace() {
   function reset() {
     setBrief(null);
     setError(null);
+    setShareUrl(null);
+    setShareError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -109,22 +142,13 @@ export function ResearchWorkspace() {
     <div className="min-h-dvh bg-background text-foreground">
       <a href="#workspace" className="skip-link">Skip to research workspace</a>
       <header className="border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1480px] items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-[1480px] items-center px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <span className="grid size-8 place-items-center rounded-[4px] bg-primary text-primary-foreground">
-              <BookOpen className="size-4" strokeWidth={2.25} />
-            </span>
+            <EpsilonMark />
             <div>
-              <p className="text-sm font-semibold leading-none">Research Navigator</p>
+              <p className="text-sm font-semibold leading-none">Epsilon</p>
               <p className="mt-1 text-[11px] text-muted-foreground">Evidence before direction</p>
             </div>
-          </div>
-          <div
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-            aria-label={health?.ready_for_analysis ? "Agent ready" : health ? "Agent setup needed" : "Checking agent"}
-          >
-            <span className={`size-2 rounded-full ${health?.ready_for_analysis ? "bg-emerald-600" : health ? "bg-amber-500" : "bg-muted-foreground/40"}`} />
-            <span className="hidden sm:inline">{health?.ready_for_analysis ? "Agent ready" : health ? "Setup needed" : "Checking agent"}</span>
           </div>
         </div>
       </header>
@@ -227,12 +251,17 @@ export function ResearchWorkspace() {
                 <div className="mb-6 flex justify-end">
                   <Button variant="ghost" size="sm" onClick={reset}><RotateCcw /> New brief</Button>
                 </div>
-                <ResearchBrief brief={brief} />
+                <ResearchBrief
+                  brief={brief}
+                  shareUrl={shareUrl}
+                  shareLoading={shareLoading}
+                  shareError={shareError}
+                />
               </>
             ) : (
               <div className="empty-sheet flex min-h-[62vh] flex-col justify-between border-y border-border py-8 sm:py-12">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="font-mono">RN / 001</span>
+                  <span className="font-mono">EPS / 001</span>
                   <span>Research direction memo</span>
                 </div>
                 <div className="max-w-3xl py-16">

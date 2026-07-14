@@ -1,4 +1,4 @@
-"""FastAPI entrypoint for the Research Navigator API and built web client."""
+"""FastAPI entrypoint for the Epsilon API and built web client."""
 
 from __future__ import annotations
 
@@ -19,12 +19,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import agent
-from .schemas import AnalyzeRequest, ResearchBrief
+from . import agent, cards
+from .schemas import AnalyzeRequest, BriefCard, BriefCardCreate, ResearchBrief
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Research Navigator", version="2.0.0")
+app = FastAPI(title="Epsilon", version="2.1.0")
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 FRONTEND_DIR = PROJECT_ROOT / "frontend" / "out"
@@ -103,6 +103,26 @@ async def analyze(req: AnalyzeRequest):
         ) from exc
 
 
+@app.post("/brief-cards", response_model=BriefCard, status_code=201)
+async def create_brief_card(payload: BriefCardCreate):
+    try:
+        return cards.create(payload)
+    except OSError as exc:
+        logger.exception("Could not persist brief card")
+        raise HTTPException(
+            status_code=500,
+            detail="The phone card could not be created. Try again.",
+        ) from exc
+
+
+@app.get("/brief-cards/{card_id}", response_model=BriefCard)
+async def get_brief_card(card_id: str):
+    card = cards.get(card_id)
+    if card is None:
+        raise HTTPException(status_code=404, detail="This brief card is unavailable.")
+    return card
+
+
 if FRONTEND_DIR.exists():
     # The Docker build creates a static Next.js export here. API routes above
     # remain available while every other path is handled by the web client.
@@ -112,7 +132,7 @@ else:
     async def api_root():
         return JSONResponse(
             {
-                "name": "Research Navigator API",
+                "name": "Epsilon API",
                 "docs": "/docs",
                 "frontend": "Run `npm run dev` from the frontend directory.",
             }

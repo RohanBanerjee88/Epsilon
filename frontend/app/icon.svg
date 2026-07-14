@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="8" fill="#b21825"/>
-  <path d="M15 18h12c3.3 0 5 1.7 5 5v24c0-3.3-1.7-5-5-5H15V18Zm34 0H37c-3.3 0-5 1.7-5 5v24c0-3.3 1.7-5 5-5h12V18Z" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+  <text x="32" y="45" fill="#fff" font-family="Arial, sans-serif" font-size="46" font-weight="700" text-anchor="middle">ε</text>
 </svg>

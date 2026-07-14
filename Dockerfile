@@ -14,7 +14,8 @@ FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8080 \
-    MEMORY_PATH=/data/memory.json
+    MEMORY_PATH=/data/memory.json \
+    CARD_STORE_PATH=/data/cards.json
 
 WORKDIR /app
 

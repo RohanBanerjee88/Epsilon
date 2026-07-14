@@ -1,7 +1,7 @@
 """Tiny per-user memory store.
 
 Maritime gives each agent a persistent micro-VM, so a JSON file on local disk
-survives between requests. This is what turns Research Navigator from a one-shot
+survives between requests. This is what turns Epsilon from a one-shot
 API into a copilot that remembers what a user has explored before.
 
 Deliberately minimal: no DB, no schema migrations. Just append refined topics.

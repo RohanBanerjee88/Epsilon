@@ -4,8 +4,8 @@ import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Research Navigator",
-  description: "Turn a broad research interest into an evidence-backed direction worth pursuing.",
+  title: "Epsilon",
+  description: "Epsilon turns a broad research interest into an evidence-backed direction worth pursuing.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

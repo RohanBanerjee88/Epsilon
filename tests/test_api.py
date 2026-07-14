@@ -2,6 +2,7 @@
 
 from fastapi.testclient import TestClient
 
+from app import cards
 from app.main import app
 
 client = TestClient(app)
@@ -18,7 +19,7 @@ def test_health_ok():
 def test_index_served():
     r = client.get("/")
     assert r.status_code == 200
-    assert "Research Navigator" in r.text
+    assert "Epsilon" in r.text
 
 
 def test_analyze_requires_api_key(monkeypatch):
@@ -61,3 +62,33 @@ def test_analyze_hides_unexpected_exception_details(monkeypatch):
     r = client.post("/research/analyze", json={"topic": "some topic here", "userId": "x"})
     assert r.status_code == 500
     assert "secret provider internals" not in r.text
+
+
+def test_brief_card_round_trip(monkeypatch, tmp_path):
+    monkeypatch.setattr(cards, "_STORE_PATH", str(tmp_path / "cards.json"))
+    payload = {
+        "refined_question": "How can compact retrievers preserve citation quality?",
+        "recommended_direction": {
+            "title": "Build a citation-aware compact retriever",
+            "rationale": "It turns a broad efficiency question into a measurable artifact.",
+            "novelty_reason": "Citation usefulness is rarely measured under memory limits.",
+            "feasibility_reason": "Public corpora and compact encoders already exist.",
+        },
+        "next_steps": ["Choose a corpus", "Set a memory budget", "Measure recall"],
+        "underexplored_areas": ["Citation quality under fixed memory"],
+        "sources_considered": 18,
+    }
+
+    created = client.post("/brief-cards", json=payload)
+    assert created.status_code == 201
+    card_id = created.json()["id"]
+
+    fetched = client.get(f"/brief-cards/{card_id}")
+    assert fetched.status_code == 200
+    assert fetched.json()["recommended_direction"]["title"] == payload["recommended_direction"]["title"]
+
+
+def test_missing_brief_card_returns_404(monkeypatch, tmp_path):
+    monkeypatch.setattr(cards, "_STORE_PATH", str(tmp_path / "cards.json"))
+    response = client.get("/brief-cards/not-a-real-card")
+    assert response.status_code == 404
