@@ -6,106 +6,123 @@
 <title>Research Navigator</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --panel-2: #1e222b;
-    --border: #2a2f3a;
-    --text: #e7e9ee;
-    --muted: #9aa1ad;
-    --accent: #7aa2f7;
-    --accent-soft: #24304d;
-    --good: #7bd88f;
-    --warn: #f7b955;
-    --radius: 14px;
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #f7f7f5;
+    --border: #e6e4df;
+    --border-strong: #d7d4cc;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --accent: #b4531f;      /* warm terracotta */
+    --accent-soft: #f3e9e2;
+    --shadow: 0 1px 2px rgba(20,20,20,.05), 0 8px 24px rgba(20,20,20,.06);
+    --radius: 16px;
   }
   * { box-sizing: border-box; }
+  html, body { background: var(--bg); }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
-    background: var(--bg);
     color: var(--text);
-    line-height: 1.5;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
-  header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
-  header p { color: var(--muted); margin: 0 0 28px; font-size: 15px; }
-  .card {
+  .wrap { max-width: 780px; margin: 0 auto; padding: 56px 20px 96px; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; font-weight: 650; }
+  header p { color: var(--muted); margin: 0; font-size: 15.5px; }
+
+  /* Prompt box — Claude/ChatGPT style */
+  .composer {
+    border: 1px solid var(--border-strong);
+    border-radius: 24px;
     background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    padding: 8px 8px 8px 18px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    transition: border-color .15s, box-shadow .15s;
   }
-  label { display: block; font-size: 13px; color: var(--muted); margin: 0 0 6px; }
-  textarea, input {
-    width: 100%; background: var(--panel-2); border: 1px solid var(--border);
-    color: var(--text); border-radius: 10px; padding: 12px 14px; font-size: 15px;
-    font-family: inherit; resize: vertical;
+  .composer:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  textarea#prompt {
+    flex: 1; border: 0; outline: 0; resize: none; background: transparent;
+    font-family: inherit; font-size: 16.5px; color: var(--text);
+    padding: 10px 0; max-height: 240px; line-height: 1.5;
   }
-  textarea:focus, input:focus { outline: none; border-color: var(--accent); }
-  .row { margin-bottom: 14px; }
-  button {
-    background: var(--accent); color: #0b1020; border: 0; border-radius: 10px;
-    padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer;
+  textarea#prompt::placeholder { color: #9aa0a6; }
+  #go {
+    flex: 0 0 auto; width: 40px; height: 40px; border: 0; border-radius: 50%;
+    background: var(--accent); color: #fff; cursor: pointer; font-size: 18px;
+    display: grid; place-items: center; transition: opacity .15s, transform .05s;
   }
-  button:disabled { opacity: 0.55; cursor: default; }
-  .hint { font-size: 12px; color: var(--muted); margin-top: 10px; }
-  .status { color: var(--muted); font-size: 14px; margin: 18px 2px; min-height: 20px; }
+  #go:disabled { background: #d8d4cd; cursor: default; }
+  #go:active:not(:disabled) { transform: scale(.94); }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+  .chip {
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
+    border-radius: 999px; padding: 7px 13px; font-size: 13px; cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .hint { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+
+  .status { color: var(--muted); font-size: 14.5px; margin: 26px 2px; min-height: 20px; text-align: center; }
+  .spinner {
+    display: inline-block; width: 15px; height: 15px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite;
+    vertical-align: -3px; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Results */
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 14px;
+  }
   .section-title {
-    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em;
     color: var(--accent); margin: 0 0 10px; font-weight: 700;
   }
-  .refined { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .refined { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
   ul.clean { margin: 0; padding-left: 18px; }
-  ul.clean li { margin: 5px 0; }
+  ul.clean li { margin: 6px 0; }
   .pill-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
-  .pill {
-    background: var(--accent-soft); border: 1px solid var(--border); color: var(--text);
-    border-radius: 999px; padding: 5px 12px; font-size: 13px;
-  }
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pill { background: var(--accent-soft); color: #8a3d16; border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media (max-width: 640px) { .cols { grid-template-columns: 1fr; } }
   .source { border-top: 1px solid var(--border); padding: 12px 0; }
   .source:first-of-type { border-top: 0; padding-top: 0; }
   .source a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 15px; }
   .source a:hover { text-decoration: underline; }
   .source .meta { font-size: 12px; color: var(--muted); margin: 2px 0 4px; }
-  .source .why { font-size: 14px; color: var(--text); }
-  .rec { background: linear-gradient(180deg, var(--accent-soft), var(--panel)); }
-  .rec h3 { margin: 0 0 8px; font-size: 19px; letter-spacing: -0.01em; }
-  .rec .sub { font-size: 13px; color: var(--muted); margin: 12px 0 2px; font-weight: 600; }
+  .source .why { font-size: 14.5px; }
+  .rec { background: var(--accent-soft); border-color: #ecdccf; }
+  .rec h3 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.01em; }
+  .rec .sub { font-size: 12.5px; color: #8a3d16; margin: 12px 0 2px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
   .steps li { margin: 8px 0; }
-  .footer { margin-top: 30px; font-size: 12px; color: var(--muted); text-align: center; }
-  .hidden { display: none; }
-  .spinner {
-    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border);
-    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite;
-    vertical-align: -2px; margin-right: 8px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .footnote { margin-top: 8px; font-size: 12px; color: var(--muted); text-align: center; }
+  .footer { margin-top: 34px; font-size: 12px; color: var(--muted); text-align: center; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>Research Navigator</h1>
-    <p>Describe a fuzzy research interest. Get back a sharper question, real
-       sources, what's crowded vs. open, and one direction worth pursuing.</p>
+    <p>Describe a research interest in plain English. Get back what's worth pursuing — and why.</p>
   </header>
 
-  <div class="card">
-    <div class="row">
-      <label for="topic">Research interest</label>
-      <textarea id="topic" rows="2" placeholder="e.g. lightweight retrieval methods for on-device scientific search"></textarea>
-    </div>
-    <div class="row">
-      <label for="context">Context <span style="opacity:.7">(optional — field, background, constraints, goal)</span></label>
-      <textarea id="context" rows="2" placeholder="e.g. undergrad, limited compute, want a scoped semester project"></textarea>
-    </div>
-    <button id="go">Explore</button>
-    <div class="hint">Backed by a persistent agent — it remembers your prior topics on this device.</div>
+  <div class="composer">
+    <textarea id="prompt" rows="1" placeholder="e.g. I want to explore lightweight retrieval methods for on-device scientific search — I'm an undergrad with limited compute looking for a scoped project."></textarea>
+    <button id="go" title="Explore (⌘/Ctrl + Enter)" aria-label="Explore">↑</button>
   </div>
+
+  <div class="examples" id="examples">
+    <span class="chip">small language models for clinical text</span>
+    <span class="chip">robust tool-using agents, not oversaturated</span>
+    <span class="chip">on-device retrieval for scientific search</span>
+  </div>
+  <div class="hint">Backed by a persistent agent — it remembers your prior topics on this device.</div>
 
   <div class="status" id="status"></div>
   <div id="results"></div>
@@ -114,7 +131,6 @@
 </div>
 
 <script>
-  // Stable per-device id so the agent's memory persists across sessions.
   const userId = (() => {
     let id = localStorage.getItem("rn_user_id");
     if (!id) { id = "u_" + Math.random().toString(36).slice(2, 12); localStorage.setItem("rn_user_id", id); }
@@ -123,6 +139,10 @@
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => (s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  const box = $("prompt");
+  function autogrow() { box.style.height = "auto"; box.style.height = Math.min(box.scrollHeight, 240) + "px"; }
+  box.addEventListener("input", autogrow);
 
   function list(items) {
     if (!items || !items.length) return '<span style="color:var(--muted)">—</span>';
@@ -143,8 +163,8 @@
 
   function render(d) {
     const rd = d.recommended_direction || {};
-    const priorNote = (d.prior_interests && d.prior_interests.length)
-      ? `<div class="hint">Considered your ${d.prior_interests.length} prior topic(s) as context.</div>` : "";
+    const prior = (d.prior_interests && d.prior_interests.length)
+      ? `<div class="footnote">Considered your ${d.prior_interests.length} prior topic(s) as context.</div>` : "";
     $("results").innerHTML = `
       <div class="card">
         <div class="section-title">Refined research question</div>
@@ -163,14 +183,8 @@
         ${list(d.key_themes)}
       </div>
       <div class="cols">
-        <div class="card">
-          <div class="section-title">What looks saturated</div>
-          ${list(d.saturated_areas)}
-        </div>
-        <div class="card">
-          <div class="section-title">What looks underexplored</div>
-          ${list(d.underexplored_areas)}
-        </div>
+        <div class="card"><div class="section-title">What looks saturated</div>${list(d.saturated_areas)}</div>
+        <div class="card"><div class="section-title">What looks underexplored</div>${list(d.underexplored_areas)}</div>
       </div>
       <div class="card rec">
         <div class="section-title">Recommended direction</div>
@@ -183,14 +197,15 @@
         <div class="section-title">Next 3 concrete steps</div>
         <ul class="clean steps">${(d.next_steps || []).map(s => `<li>${esc(s)}</li>`).join("")}</ul>
       </div>
-      <div class="hint">Synthesized from ${d.sources_considered} retrieved sources · model ${esc(d.model)}</div>
-      ${priorNote}
+      <div class="footnote">Synthesized from ${d.sources_considered} retrieved sources · model ${esc(d.model)}</div>
+      ${prior}
     `;
+    $("results").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function run() {
-    const topic = $("topic").value.trim();
-    if (topic.length < 3) { $("status").textContent = "Enter a research interest first."; return; }
+    const topic = box.value.trim();
+    if (topic.length < 3) { $("status").textContent = "Describe a research interest first."; return; }
     $("go").disabled = true;
     $("results").innerHTML = "";
     $("status").innerHTML = '<span class="spinner"></span>Planning queries, searching papers, and synthesizing…';
@@ -198,7 +213,7 @@
       const res = await fetch("/research/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, context: $("context").value.trim(), userId })
+        body: JSON.stringify({ topic, context: "", userId })
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -215,7 +230,12 @@
   }
 
   $("go").addEventListener("click", run);
-  $("topic").addEventListener("keydown", (e) => { if (e.metaKey && e.key === "Enter") run(); });
+  box.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey || !e.shiftKey)) { e.preventDefault(); run(); }
+  });
+  $("examples").addEventListener("click", (e) => {
+    if (e.target.classList.contains("chip")) { box.value = e.target.textContent; autogrow(); box.focus(); }
+  });
 </script>
 </body>
 </html>

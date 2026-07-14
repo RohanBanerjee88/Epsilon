@@ -41,7 +41,7 @@ def stub_boundaries(monkeypatch, tmp_path):
 
     calls = {"n": 0}
 
-    async def fake_claude_json(system, user, max_tokens):
+    async def fake_claude_structured(system, user, schema, **kwargs):
         calls["n"] += 1
         if calls["n"] % 2 == 1:  # planner phase
             return {
@@ -67,7 +67,7 @@ def stub_boundaries(monkeypatch, tmp_path):
         }
 
     monkeypatch.setattr(agent.retrieval, "retrieve", fake_retrieve)
-    monkeypatch.setattr(agent, "_claude_json", fake_claude_json)
+    monkeypatch.setattr(agent, "_claude_structured", fake_claude_structured)
     return calls
 
 
