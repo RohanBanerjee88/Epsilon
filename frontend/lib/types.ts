@@ -26,6 +26,13 @@ export type ResearchBrief = {
   model: string;
 };
 
+export type ResearchJob = {
+  id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  brief?: ResearchBrief | null;
+  error?: string | null;
+};
+
 export type BriefCard = {
   id: string;
   created_at: string;

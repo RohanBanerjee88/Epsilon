@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import pathlib
+import uuid
 
 from anthropic import (
     APIConnectionError,
@@ -20,7 +22,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import agent, cards
-from .schemas import AnalyzeRequest, BriefCard, BriefCardCreate, ResearchBrief
+from .schemas import AnalyzeRequest, BriefCard, BriefCardCreate, ResearchBrief, ResearchJob
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,8 @@ app = FastAPI(title="Epsilon", version="2.1.0")
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[1]
 FRONTEND_DIR = PROJECT_ROOT / "frontend" / "out"
+research_jobs: dict[str, ResearchJob] = {}
+research_tasks: set[asyncio.Task[None]] = set()
 
 cors_origins = [
     origin.strip()
@@ -58,8 +62,7 @@ async def health():
     }
 
 
-@app.post("/research/analyze", response_model=ResearchBrief)
-async def analyze(req: AnalyzeRequest):
+async def run_analysis(req: AnalyzeRequest) -> ResearchBrief:
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured.")
 
@@ -101,6 +104,60 @@ async def analyze(req: AnalyzeRequest):
             status_code=500,
             detail="The analysis could not be completed. Check the backend logs.",
         ) from exc
+
+
+@app.post("/research/analyze", response_model=ResearchBrief)
+async def analyze(req: AnalyzeRequest):
+    return await run_analysis(req)
+
+
+async def process_research_job(job_id: str, req: AnalyzeRequest) -> None:
+    research_jobs[job_id] = ResearchJob(id=job_id, status="running")
+    try:
+        brief = await run_analysis(req)
+        research_jobs[job_id] = ResearchJob(
+            id=job_id,
+            status="completed",
+            brief=brief,
+        )
+    except HTTPException as exc:
+        detail = exc.detail if isinstance(exc.detail, str) else "The analysis could not be completed."
+        research_jobs[job_id] = ResearchJob(id=job_id, status="failed", error=detail)
+    except Exception:
+        logger.exception("Unexpected research job failure")
+        research_jobs[job_id] = ResearchJob(
+            id=job_id,
+            status="failed",
+            error="The analysis could not be completed. Check the backend logs.",
+        )
+
+
+@app.post("/research/jobs", response_model=ResearchJob, status_code=202)
+async def create_research_job(req: AnalyzeRequest):
+    if len(research_jobs) >= 100:
+        completed_ids = [
+            job_id
+            for job_id, job in research_jobs.items()
+            if job.status in {"completed", "failed"}
+        ]
+        for job_id in completed_ids[:50]:
+            research_jobs.pop(job_id, None)
+
+    job_id = uuid.uuid4().hex
+    job = ResearchJob(id=job_id, status="queued")
+    research_jobs[job_id] = job
+    task = asyncio.create_task(process_research_job(job_id, req))
+    research_tasks.add(task)
+    task.add_done_callback(research_tasks.discard)
+    return job
+
+
+@app.get("/research/jobs/{job_id}", response_model=ResearchJob)
+async def get_research_job(job_id: str):
+    job = research_jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="This research job is unavailable.")
+    return job
 
 
 @app.post("/brief-cards", response_model=BriefCard, status_code=201)

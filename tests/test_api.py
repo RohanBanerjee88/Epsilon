@@ -1,5 +1,7 @@
 """Smoke tests for the HTTP surface using FastAPI's TestClient."""
 
+import time
+
 from fastapi.testclient import TestClient
 
 from app import cards
@@ -62,6 +64,40 @@ def test_analyze_hides_unexpected_exception_details(monkeypatch):
     r = client.post("/research/analyze", json={"topic": "some topic here", "userId": "x"})
     assert r.status_code == 500
     assert "secret provider internals" not in r.text
+
+
+def test_research_job_completes_without_holding_request(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setattr(
+        "app.main.agent.runtime_diagnostics",
+        lambda: {"sdk_version": "1.0", "sdk_compatible": True, "issue": None},
+    )
+
+    async def succeed(_req):
+        return {
+            "refined_question": "How can compact models summarize clinical notes privately?",
+            "recommended_direction": {
+                "title": "Benchmark a compact private summarizer",
+                "rationale": "It is measurable.",
+                "novelty_reason": "Privacy and latency are evaluated together.",
+                "feasibility_reason": "Public data and compact models exist.",
+            },
+        }
+
+    monkeypatch.setattr("app.main.agent.run_analysis", succeed)
+    created = client.post("/research/jobs", json={"topic": "compact clinical models", "userId": "x"})
+    assert created.status_code == 202
+
+    job_id = created.json()["id"]
+    for _ in range(20):
+        job = client.get(f"/research/jobs/{job_id}")
+        if job.json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+
+    assert job.status_code == 200
+    assert job.json()["status"] == "completed"
+    assert job.json()["brief"]["recommended_direction"]["title"] == "Benchmark a compact private summarizer"
 
 
 def test_brief_card_round_trip(monkeypatch, tmp_path):

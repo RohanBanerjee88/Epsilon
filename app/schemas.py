@@ -65,6 +65,13 @@ class ResearchBrief(BaseModel):
     model: str = ""
 
 
+class ResearchJob(BaseModel):
+    id: str
+    status: Literal["queued", "running", "completed", "failed"]
+    brief: Optional[ResearchBrief] = None
+    error: Optional[str] = None
+
+
 # ---- Shareable quick-note card --------------------------------------------
 
 

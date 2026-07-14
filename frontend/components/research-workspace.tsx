@@ -9,7 +9,7 @@ import { ResearchLoading } from "@/components/research-loading";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { BriefCard, ResearchBrief as ResearchBriefType } from "@/lib/types";
+import type { BriefCard, ResearchBrief as ResearchBriefType, ResearchJob } from "@/lib/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === "development" ? "http://localhost:8080" : "");
 const EXAMPLES = [
@@ -40,6 +40,10 @@ function readError(payload: unknown, fallback: string) {
     if (Array.isArray(detail)) return detail.map((item) => (typeof item === "object" && item && "msg" in item ? String(item.msg) : String(item))).join(" ");
   }
   return fallback;
+}
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
 export function ResearchWorkspace() {
@@ -113,14 +117,36 @@ export function ResearchWorkspace() {
     setShareError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/research/analyze`, {
+      const response = await fetch(`${API_BASE_URL}/research/jobs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: cleanTopic, context: context.trim(), userId: getUserId() }),
       });
       const payload: unknown = await response.json().catch(() => null);
       if (!response.ok) throw new Error(readError(payload, `Request failed with status ${response.status}.`));
-      const completedBrief = payload as ResearchBriefType;
+
+      const createdJob = payload as ResearchJob;
+      let completedBrief: ResearchBriefType | null = null;
+
+      for (let attempt = 0; attempt < 240; attempt += 1) {
+        await wait(1500);
+        const statusResponse = await fetch(`${API_BASE_URL}/research/jobs/${encodeURIComponent(createdJob.id)}`, {
+          cache: "no-store",
+        });
+        const statusPayload: unknown = await statusResponse.json().catch(() => null);
+        if (!statusResponse.ok) {
+          throw new Error(readError(statusPayload, `Status check failed with ${statusResponse.status}.`));
+        }
+
+        const job = statusPayload as ResearchJob;
+        if (job.status === "failed") throw new Error(job.error || "The analysis could not be completed.");
+        if (job.status === "completed" && job.brief) {
+          completedBrief = job.brief;
+          break;
+        }
+      }
+
+      if (!completedBrief) throw new Error("The research run took too long. Please try again.");
       setBrief(completedBrief);
       void preparePhoneCard(completedBrief);
     } catch (caught) {
