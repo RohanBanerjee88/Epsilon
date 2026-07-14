@@ -31,4 +31,4 @@ RUN mkdir -p /data
 EXPOSE 8080
 
 # The Python launcher reads Maritime's injected PORT without shell expansion.
-CMD ["python", "-m", "app.start"]
+CMD ["/usr/local/bin/python", "-m", "app.start"]
