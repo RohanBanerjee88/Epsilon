@@ -7,9 +7,8 @@ import { ArrowLeft, CircleCheck, Lightbulb } from "lucide-react";
 import { EpsilonMark } from "@/components/epsilon-mark";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { API_BASE_URL } from "@/lib/runtime";
 import type { BriefCard } from "@/lib/types";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === "development" ? "http://localhost:8080" : "");
 
 export function BriefCardSkeleton() {
   return (

@@ -9,9 +9,9 @@ import { ResearchLoading } from "@/components/research-loading";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { API_BASE_URL, APP_BASE_PATH } from "@/lib/runtime";
 import type { BriefCard, ResearchBrief as ResearchBriefType, ResearchJob } from "@/lib/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === "development" ? "http://localhost:8080" : "");
 const EXAMPLES = [
   "Small language models for clinical text",
   "Robust tool-using agents without a saturated angle",
@@ -93,7 +93,7 @@ export function ResearchWorkspace() {
 
       const card = payload as BriefCard;
       const configuredOrigin = process.env.NEXT_PUBLIC_SHARE_BASE_URL?.replace(/\/$/, "");
-      const origin = configuredOrigin || window.location.origin;
+      const origin = configuredOrigin || `${window.location.origin}${APP_BASE_PATH}`;
       setShareUrl(`${origin}/card/?id=${encodeURIComponent(card.id)}`);
     } catch (caught) {
       setShareError(caught instanceof Error ? caught.message : "The phone card could not be created.");

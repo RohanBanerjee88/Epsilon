@@ -6,6 +6,8 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 COPY frontend ./
+ARG NEXT_PUBLIC_BASE_PATH=/a/dfe76a89-ace9-4be1-9dff-924ffe9223b5
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 RUN npm run build
 
 
